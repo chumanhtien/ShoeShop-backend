@@ -1,6 +1,7 @@
-import express from "express"
-import asyncHandler from "express-async-handler"
+import express from "express";
+import asyncHandler from "express-async-handler";
 import Product from "../Models/ProductModel.js";
+import protect from "../Middleware/AuthMiddleware.js"
 
 const productRoute = express.Router();
 // Lay data tu mongoose db
@@ -20,6 +21,51 @@ productRoute.get(
         const product = await Product.findById(req.params.id);
         if(product) {
             res.json(product);
+        } else {
+            res.status(404);
+            throw new Error("Product not found!");
+        }
+    })  
+);
+
+//PRODUCT REVIEW
+productRoute.post(
+    "/:id/review",
+    protect,
+    asyncHandler(async (req, res) => {
+        const {rating, comment} = req.body;
+        const product = await Product.findById(req.params.id);
+        if(product) {
+
+            //CHI REVIEW 1 LAN DUY NHAT !
+            const alreadyReviewed = product.reviews.find(
+                (r) => r.user.toString() === req.user._id.toString()
+            )
+            // if (alreadyReviewed) {
+            //     res.status(400);
+            //     throw new Error("Product already Reviewed");
+            // } 
+            const review = {
+                name: req.user.name,
+                rating: Number(rating),
+                comment,
+                user: req.user._id,
+                createdAt: Date.now(),
+            };
+            if (alreadyReviewed) {
+                product.reviews.remove(alreadyReviewed);
+            } 
+            product.reviews.push(review);
+            product.numReviews = product.reviews.length;
+            product.rating = product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
+            
+            await product.save();
+            if (alreadyReviewed) {
+                res.status(202).json({message: "Review has already been Updated"});
+            }
+            else {
+                res.status(201).json({message: "Review has already beern Added"});
+            }
         } else {
             res.status(404);
             throw new Error("Product not found!");

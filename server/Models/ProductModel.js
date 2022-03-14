@@ -9,9 +9,13 @@ const reviewSchema = mongoose.Schema({
         type: Number,
         required: true,
     },
-    commment: {
+    comment: {
         type: String,
         required: true,
+    },
+    createdAt: {
+        type: Date,
+        // required: true
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
