@@ -2,6 +2,7 @@ import express from "express";
 import asyncHandler from "express-async-handler";
 import Product from "../Models/ProductModel.js";
 import protect from "../Middleware/AuthMiddleware.js"
+import { PAGE_SIZE } from "../constants/PageConstants.js";
 
 const productRoute = express.Router();
 // Lay data tu mongoose db
@@ -9,8 +10,22 @@ const productRoute = express.Router();
 productRoute.get(
     "/", 
     asyncHandler (async (req, res) => {
-        const products = await Product.find({})
-        res.json(products);
+        const pageSize = PAGE_SIZE;
+        const page = Number(req.query.pageNumber) || 1;
+        const keyword = req.query.keyword ? {
+            name: {
+                $regex: req.query.keyword,
+                $options: "i",
+            },
+        }
+        : {
+
+        };
+        const count = await Product.countDocuments({...keyword});
+        const products = await Product.find({...keyword})
+            .limit(pageSize)
+            .skip(pageSize * (page - 1)).sort({_id: -1});
+        res.json({products, page, pages: Math.ceil(count / pageSize)});
     })
 );
 
