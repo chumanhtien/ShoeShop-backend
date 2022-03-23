@@ -118,6 +118,7 @@ orderRouter.put(
         
         if (order) {
             order.isDelivered = true;
+            // order.isPaid = true;
             order.deliveredAt = Date.now();
             const updatedOrder = await order.save();
             res.json(updatedOrder);
